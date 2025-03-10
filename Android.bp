@@ -122,6 +122,91 @@ cc_defaults {
     ],
 }
 
+cc_binary {
+    name: "chre",
+    owner: "google",
+
+    vendor: true,
+    init_rc: ["chre_daemon.rc"],
+
+    cflags: [
+        "-std=c++20",
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-Wno-sign-compare",
+        "-Wno-c++11-narrowing",
+        "-Wno-deprecated-volatile",
+        "-DCHRE_DAEMON_METRIC_ENABLED",
+    ] + select(soong_config_variable("chre", "chre_daemon_load_into_sensorspd"), {
+        true: ["-DCHRE_DAEMON_LOAD_INTO_SENSORSPD"],
+        default: [],
+    }) + select(soong_config_variable("chre", "chre_daemon_lpma_enabled"), {
+        true: ["-DCHRE_DAEMON_LPMA_ENABLED"],
+        default: [],
+    }),
+
+    tidy_checks: ["-google-runtime-int"],
+
+    srcs: [
+        "host/common/bt_snoop_log_parser.cc",
+        "host/common/daemon_base.cc",
+        "host/common/config_util.cc",
+        "host/common/fbs_daemon_base.cc",
+        "host/common/file_stream.cc",
+        "host/common/fragmented_load_transaction.cc",
+        "host/common/host_protocol_host.cc",
+        "host/common/log_message_parser.cc",
+        "host/common/socket_server.cc",
+        "host/common/st_hal_lpma_handler.cc",
+        "host/msm/daemon/fastrpc_daemon.cc",
+        "host/msm/daemon/generated/chre_slpi_stub.c",
+        "host/msm/daemon/main.cc",
+        "platform/shared/host_protocol_common.cc",
+    ],
+
+    include_dirs: [
+        "external/fastrpc/inc",
+        "system/chre/external/flatbuffers/include",
+        "system/chre/host/common/include",
+        "system/chre/host/msm/daemon",
+        "system/chre/platform/shared/include",
+        "system/chre/platform/slpi/include",
+        "system/chre/util/include",
+        "system/core/libcutils/include",
+        "system/core/libutils/include",
+        "system/libbase/include",
+        "system/logging/liblog/include",
+    ],
+
+    shared_libs: [
+        "libjsoncpp",
+        "libutils",
+        "libcutils",
+        "liblog",
+        "libhidlbase",
+        "libbase",
+        "android.hardware.soundtrigger@2.0",
+        "libpower",
+        "libprotobuf-cpp-lite",
+        "chremetrics-cpp",
+        "chre_atoms_log",
+        "android.frameworks.stats-V2-ndk",
+        "libbinder_ndk",
+        "server_configurable_flags",
+    ] + select(soong_config_variable("chre", "chre_daemon_dsp_library"), {
+        any @ flag_val: [ flag_val ],
+        default: [],
+    }),
+
+    static_libs: [
+        "chre_flags_c_lib",
+        "chre_metrics_reporter",
+        "pw_detokenizer",
+        "pw_varint",
+    ],
+}
+
 cc_library_static {
     name: "chre_client",
     vendor_available: true,
